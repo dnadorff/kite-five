@@ -1,0 +1,1141 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kite Five</title>
+<meta name="description" content="A push-your-luck kite game for 2 to 6 players, with robots, one-phone play, and linked phones.">
+<meta name="theme-color" content="#EAF4FD" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0E1A2B" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Kite Five">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<style>
+:root{
+  --bg:#EAF4FD; --surface:#FFFFFF; --ink:#13243A; --muted:#4D5E73; --line:#CFE0F0; --soft:#DCEBF8;
+  --accent:#1D5FA8; --accent-ink:#FFFFFF; --good:#1F7A44; --good-ink:#FFFFFF; --bad:#B42318; --focus:#7C3AED; --warn:#8A5300;
+  --k0:#C8233A; --k1:#D24E12; --k2:#F2C230; --k3:#1F8048; --k4:#1E63B0; --kink:#FFFFFF; --kink2:#1B1B1B;
+  --font-display: "Avenir Next", "Trebuchet MS", "Segoe UI", sans-serif;
+  --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E1A2B; --surface:#16263B; --ink:#EEF4FB; --muted:#A9BBD0; --line:#2B4260; --soft:#1D3150;
+    --accent:#7FB6F2; --accent-ink:#0B1626; --good:#4ADE80; --good-ink:#0B1A10; --bad:#FF8A80; --focus:#C4B5FD; --warn:#FBBF24;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E1A2B; --surface:#16263B; --ink:#EEF4FB; --muted:#A9BBD0; --line:#2B4260; --soft:#1D3150;
+  --accent:#7FB6F2; --accent-ink:#0B1626; --good:#4ADE80; --good-ink:#0B1A10; --bad:#FF8A80; --focus:#C4B5FD; --warn:#FBBF24;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:16px;line-height:1.45;-webkit-text-size-adjust:100%}
+body{padding:0 max(14px,env(safe-area-inset-right,0px)) 40px max(14px,env(safe-area-inset-left,0px))}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:20}
+.app{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
+h1,h2,h3{font-family:var(--font-display);margin:0;line-height:1.15}
+h1{font-size:2.6rem;font-weight:800} h2{font-size:1.35rem;font-weight:800} h3{font-size:1.05rem}
+p{margin:0} .muted{color:var(--muted)} .small{font-size:.88rem} .center{text-align:center}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px} [tabindex="-1"]:focus{outline:none}
+.sr{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+.topbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:10;background:var(--bg);display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 0 6px;border-bottom:1px solid var(--line);white-space:nowrap}
+.brand{font-family:var(--font-display);font-weight:800;font-size:1.2rem;display:flex;align-items:center;gap:8px}
+.brand svg{width:28px;height:28px}
+.meta{font-size:.88rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis}
+.btn{font:inherit;font-weight:700;font-size:1.02rem;border-radius:14px;padding:13px 14px;cursor:pointer;width:100%;color:var(--ink);background:var(--surface);border:1.5px solid var(--line);text-align:center}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn-primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn-good{background:var(--good);color:var(--good-ink);border-color:var(--good)}
+.btn-big{font-size:1.2rem;padding:16px 14px}
+.btn-small{width:auto;padding:7px 12px;font-size:.9rem;border-radius:999px}
+.btn .sub{display:block;font-weight:500;font-size:.85rem;opacity:.9}
+.btn.suggest{box-shadow:0 0 0 3px var(--focus)}
+.btn.suggest::after{content:" (hint)";font-weight:600;font-size:.85rem}
+.linkbtn{font:inherit;background:none;border:0;color:var(--muted);text-decoration:underline;cursor:pointer;padding:6px}
+.row{display:flex;gap:8px;flex-wrap:wrap}.row>*{flex:1 1 140px;min-width:0}
+.stack{display:flex;flex-direction:column;gap:10px}
+.panel{background:var(--surface);border:1.5px solid var(--line);border-radius:16px;padding:14px}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;background:var(--soft);padding:4px;border-radius:12px}
+.seg button{font:inherit;font-weight:700;font-size:.9rem;padding:9px 4px;border:0;border-radius:9px;background:transparent;color:var(--muted);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.2)}
+label{font-weight:700;font-size:.92rem}
+input[type=text],select,textarea{font:inherit;padding:10px 12px;border-radius:10px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);width:100%}
+textarea{min-height:84px;font-size:.85rem;word-break:break-all}
+.seat{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:6px;align-items:center}
+.xbtn{font:inherit;font-weight:700;width:42px;height:42px;border-radius:10px;border:1.5px solid var(--line);background:var(--surface);color:var(--muted);cursor:pointer}
+.hero{padding:16px 0 2px;display:flex;flex-direction:column;gap:8px}
+.hero .tagline{color:var(--accent);font-weight:800;letter-spacing:.05em;text-transform:uppercase;font-size:.8rem}
+.hero svg.sky{width:100%;height:auto;max-height:150px}
+/* kite cards */
+.kc{position:relative;display:inline-grid;place-items:center;width:46px;height:62px;border-radius:9px;color:var(--kink);font-family:var(--font-display);font-weight:900;font-size:1.45rem;border:2px solid rgba(0,0,0,.18);flex:none;line-height:1}
+.kc .sh{position:absolute;top:3px;left:4px;width:13px;height:13px}
+.kc .sh path,.kc .sh polygon,.kc .sh circle,.kc .sh rect{fill:currentColor}
+.kc.c0{background:var(--k0)} .kc.c1{background:var(--k1)} .kc.c2{background:var(--k2);color:var(--kink2)} .kc.c3{background:var(--k3)} .kc.c4{background:var(--k4)}
+.kc.c5{background:linear-gradient(160deg,var(--k0),var(--k1) 25%,var(--k2) 45%,var(--k3) 65%,var(--k4));text-shadow:0 1px 2px rgba(0,0,0,.85),0 0 1px #000}
+.kc.big{width:86px;height:116px;border-radius:14px;font-size:2.8rem}
+.kc.big .sh{width:22px;height:22px;top:6px;left:7px}
+.kc .nm{position:absolute;bottom:5px;font-size:.62rem;font-weight:800;letter-spacing:.03em;text-transform:uppercase}
+.kc.big .nm{font-size:.75rem;bottom:8px}
+.kc.pick{cursor:pointer}
+.cards{display:flex;flex-wrap:wrap;gap:5px;min-height:62px;align-items:center}
+.none{color:var(--muted);font-size:.88rem}
+.die{display:inline-grid;place-items:center;width:64px;height:64px;border-radius:14px;background:var(--surface);border:3px solid var(--ink);font-family:var(--font-display);font-weight:900;font-size:2.2rem;flex:none}
+/* table */
+.seats{display:flex;flex-direction:column;gap:8px}
+.pl{background:var(--surface);border:2px solid var(--line);border-radius:14px;padding:9px 10px;display:flex;flex-direction:column;gap:6px}
+.pl.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+.pl .hd{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.pl .nm{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pl .sc{font-weight:700;white-space:nowrap;font-size:.92rem}
+.tagx{font-size:.72rem;font-weight:800;border:1.5px solid currentColor;border-radius:999px;padding:1px 7px;margin-left:6px;color:var(--muted);vertical-align:2px}
+.tagx.turn{color:var(--accent)} .tagx.off{color:var(--bad)}
+.stage{background:var(--surface);border:2px solid var(--line);border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:10px}
+.news{display:flex;gap:12px;align-items:center;min-height:70px}
+.news p{font-weight:600}
+.news.tangle p{color:var(--bad)}
+.feed{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;font-size:.88rem;color:var(--muted)}
+.choose{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px}
+.coach{border:2px solid var(--focus);background:var(--surface);border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.coach .who{font-weight:800;color:var(--focus);font-size:.85rem;text-transform:uppercase;letter-spacing:.05em}
+.hint{border-left:4px solid var(--focus);padding:8px 10px;background:var(--soft);border-radius:8px}
+.code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:1.7rem;font-weight:800;letter-spacing:.08em;text-align:center;padding:12px;background:var(--soft);border-radius:12px}
+.checkc{font-family:ui-monospace,Menlo,Consolas,monospace;font-weight:800}
+.banner{background:var(--accent);color:var(--accent-ink);border-radius:16px;padding:14px;text-align:center}
+.banner .big{font-family:var(--font-display);font-size:1.7rem;font-weight:800}
+.warn{color:var(--warn);font-weight:700}
+.reslist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.reslist li{display:flex;justify-content:space-between;gap:10px;border-top:1px solid var(--line);padding-top:6px}
+dialog{border:0;border-radius:18px;padding:0;background:var(--surface);color:var(--ink);width:min(92vw,500px);max-height:86vh}
+dialog::backdrop{background:rgba(6,12,22,.6)}
+.dlg{padding:16px;display:flex;flex-direction:column;gap:10px;max-height:86vh;overflow:auto}
+.dlg ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
+.status{font-weight:700}
+.status.ok{color:var(--good)} .status.wait{color:var(--warn)}
+.check{display:flex;gap:10px;align-items:center;font-weight:700}
+.check input{width:22px;height:22px}
+
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="brand"><svg viewBox="0 0 32 32" aria-hidden="true"><polygon points="16,2 27,13 16,26 5,13" fill="#1E63B0"/><polygon points="16,2 27,13 16,13" fill="#C8233A"/><polygon points="16,13 5,13 16,26" fill="#F2C230"/><path d="M16 26 C 13 28, 19 29, 15 31" stroke="#1F8048" stroke-width="2" fill="none"/></svg><span>Kite Five</span></div>
+    <div class="meta" id="meta"></div>
+    <button class="btn btn-small" id="menuBtn" type="button">Menu</button>
+  </header>
+  <div class="sr" role="status" aria-live="polite" id="live"></div>
+  <main id="view" class="stack"></main>
+  <dialog id="dlg" aria-label="Menu"><div class="dlg" id="dlgBody"></div></dialog>
+</div>
+
+<script>
+// Kite Five: the rules, independent of the screens. Every random event comes from a seeded generator kept in the
+// game state, so two phones that start from the same code and see the same moves always agree.
+const KF = (() => {
+  const VERSION = 1;
+  const COLORS = [
+    { key: 'red', name: 'Red', shape: 'diamond', sym: '◆' },
+    { key: 'orange', name: 'Orange', shape: 'triangle', sym: '▲' },
+    { key: 'yellow', name: 'Yellow', shape: 'circle', sym: '●' },
+    { key: 'green', name: 'Green', shape: 'square', sym: '■' },
+    { key: 'blue', name: 'Blue', shape: 'hexagon', sym: '⬢' },
+    { key: 'rainbow', name: 'Rainbow', shape: 'star', sym: '✦', wild: true }
+  ];
+  const RAINBOW = 5;
+  // deck: each of the 5 colors has two 0s and three each of 1 to 6; plus 6 rainbow kites numbered 1 to 6
+  const CARDS = [];
+  for (let c = 0; c < 5; c++) { CARDS.push({ c, n: 0 }, { c, n: 0 }); for (let n = 1; n <= 6; n++) for (let k = 0; k < 3; k++) CARDS.push({ c, n }); }
+  for (let n = 1; n <= 6; n++) CARDS.push({ c: RAINBOW, n });
+  const REMOVE = { 2: 52, 3: 39, 4: 26, 5: 13, 6: 0 };
+  const card = id => CARDS[id];
+  const label = id => { const k = CARDS[id]; return `${COLORS[k.c].name} ${k.n}`; };
+
+  // mulberry32, with its state stored in the game
+  function next(g) { let t = (g.rng = (g.rng + 0x6D2B79F5) >>> 0); t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }
+  const randInt = (g, n) => Math.floor(next(g) * n);
+
+  /* seats: [{ name, kind: 'human'|'robot', level: 1|2|3 }]; preset (practice game): { top: [card ids drawn first], rolls: [die results used first] } */
+  function newGame(seats, seed, preset) {
+    const g = { v: VERSION, seed: seed >>> 0, rng: seed >>> 0, players: seats.map(s => ({ name: s.name, kind: s.kind, level: s.level || 2, up: [], bank: [] })),
+      deck: [], removed: 0, discard: [], turn: 0, phase: 'turn', final: false, queue: [], done: [], pend: null, lastDraw: false,
+      moveNo: 0, log: [], rolls: preset && preset.rolls ? preset.rolls.slice() : [] };
+    let ids = CARDS.map((_, i) => i);
+    const top = preset && preset.top ? preset.top : [];
+    ids = ids.filter(i => !top.includes(i));
+    for (let i = ids.length - 1; i > 0; i--) { const j = randInt(g, i + 1); [ids[i], ids[j]] = [ids[j], ids[i]]; }
+    const rm = REMOVE[seats.length] || 0;
+    g.removed = rm; ids = ids.slice(rm);
+    if (preset && preset.size) ids = ids.slice(0, Math.max(0, preset.size - top.length)); // short practice deck
+    g.deck = ids.concat(top.slice().reverse()); // draw from the end, so top[0] comes first
+    return g;
+  }
+
+  const colorsUp = p => new Set(p.up.map(id => CARDS[id].c).filter(c => c !== RAINBOW));
+  const hasColor = (p, c) => c !== RAINBOW && p.up.some(id => CARDS[id].c === c);
+  const score = p => p.bank.reduce((s, id) => s + CARDS[id].n, 0);
+  const upValue = p => p.up.reduce((s, id) => s + CARDS[id].n, 0);
+  const upNumbers = p => new Set(p.up.map(id => CARDS[id].n).filter(n => n >= 1));
+  function ev(g, e) { e.no = g.moveNo; g.log.push(e); if (g.log.length > 60) g.log.shift(); }
+
+  // a player with all five colors in the air reels them all in at once, even off-turn
+  function checkFive(g, i) {
+    const p = g.players[i];
+    if (colorsUp(p).size === 5) { const cards = p.up.slice(); p.bank.push(...p.up); p.up = []; ev(g, { t: 'five', who: i, cards, pts: cards.reduce((s, id) => s + CARDS[id].n, 0) }); }
+  }
+
+  /* what has to happen next: { who, kind: 'turn'|'give'|'take', options } */
+  function decision(g) {
+    if (g.phase === 'over') return null;
+    if (g.phase === 'turn') {
+      const p = g.players[g.turn], opts = [];
+      if (!g.final && g.deck.length) opts.push('draw');
+      if (p.up.length) opts.push('bank');
+      return { who: g.turn, kind: 'turn', options: opts };
+    }
+    if (g.phase === 'give') return { who: g.turn, kind: 'give', options: g.pend.to.slice(), card: g.pend.card };
+    if (g.phase === 'take') return { who: g.pend.takers[0], kind: 'take', options: takeable(g, g.pend.takers[0]), from: g.pend.from };
+    return null;
+  }
+  function takeable(g, i) {
+    const p = g.players[i], from = g.players[g.pend.from];
+    return from.up.filter(id => CARDS[id].c === RAINBOW || !hasColor(p, CARDS[id].c));
+  }
+
+  function apply(g, a) {
+    const d = decision(g);
+    if (!d) throw new Error('game over');
+    g.moveNo++;
+    if (d.kind === 'turn') {
+      if (!d.options.includes(a.t)) throw new Error('not allowed: ' + a.t);
+      if (a.t === 'draw') return draw(g);
+      return bank(g);
+    }
+    if (d.kind === 'give') {
+      if (a.t !== 'give' || !d.options.includes(a.to)) throw new Error('bad give');
+      const id = g.pend.card; g.pend = null; g.phase = 'turn';
+      g.players[a.to].up.push(id); ev(g, { t: 'give', who: g.turn, to: a.to, card: id });
+      checkFive(g, a.to);
+      return endTurn(g);
+    }
+    if (d.kind === 'take') {
+      const taker = d.who;
+      if (a.t !== 'take' || (a.card !== null && !d.options.includes(a.card))) throw new Error('bad take');
+      g.pend.takers.shift();
+      if (a.card !== null) {
+        const from = g.players[g.pend.from];
+        from.up.splice(from.up.indexOf(a.card), 1); g.players[taker].up.push(a.card);
+        ev(g, { t: 'take', who: taker, from: g.pend.from, card: a.card }); checkFive(g, taker);
+      } else ev(g, { t: 'pass', who: taker, from: g.pend.from });
+      return continueTakes(g);
+    }
+  }
+
+  function draw(g) {
+    const id = g.deck.pop(), c = CARDS[id].c, me = g.players[g.turn];
+    if (!g.deck.length) g.lastDraw = true;
+    if (c === RAINBOW || !hasColor(me, c)) {
+      me.up.push(id); ev(g, { t: 'keep', who: g.turn, card: id }); checkFive(g, g.turn); return endTurn(g);
+    }
+    const to = [];
+    for (let k = 1; k < g.players.length; k++) { const i = (g.turn + k) % g.players.length; if (!hasColor(g.players[i], c)) to.push(i); }
+    if (to.length) { g.phase = 'give'; g.pend = { card: id, to }; ev(g, { t: 'mustgive', who: g.turn, card: id, to }); return; }
+    g.discard.push(id); ev(g, { t: 'tangle', who: g.turn, card: id, why: 'color' });
+    return startTakes(g);
+  }
+  function bank(g) {
+    const me = g.players[g.turn];
+    const roll = g.rolls.length ? g.rolls.shift() : 1 + randInt(g, 6);
+    if (upNumbers(me).has(roll)) { ev(g, { t: 'tangle', who: g.turn, roll, why: 'roll' }); return startTakes(g); }
+    const cards = me.up.slice(); me.bank.push(...me.up); me.up = [];
+    ev(g, { t: 'bank', who: g.turn, roll, cards, pts: cards.reduce((s, id) => s + CARDS[id].n, 0) });
+    return endTurn(g);
+  }
+  function startTakes(g) {
+    const n = g.players.length, takers = [];
+    for (let k = 1; k < n; k++) { const i = (g.turn + k) % n; if (!(g.final && g.done.includes(i))) takers.push(i); }
+    g.phase = 'take'; g.pend = { from: g.turn, takers };
+    return continueTakes(g);
+  }
+  function continueTakes(g) {
+    const from = g.players[g.pend.from];
+    while (g.pend.takers.length && from.up.length) {
+      if (takeable(g, g.pend.takers[0]).length) return; // that player decides
+      ev(g, { t: 'cant', who: g.pend.takers[0], from: g.pend.from }); g.pend.takers.shift();
+    }
+    if (from.up.length) { ev(g, { t: 'drop', who: g.pend.from, cards: from.up.slice() }); g.discard.push(...from.up); from.up = []; }
+    g.pend = null; g.phase = 'turn';
+    return endTurn(g);
+  }
+  function endTurn(g) {
+    const n = g.players.length;
+    if (g.final) { g.done.push(g.turn); g.queue.shift(); }
+    else if (g.lastDraw) {
+      g.final = true; g.queue = []; for (let k = 1; k <= n; k++) g.queue.push((g.turn + k) % n);
+      ev(g, { t: 'final' });
+    } else { g.turn = (g.turn + 1) % n; return; }
+    // last flight: skip anyone with nothing in the air
+    while (g.queue.length && !g.players[g.queue[0]].up.length) { ev(g, { t: 'skip', who: g.queue[0] }); g.done.push(g.queue.shift()); }
+    if (!g.queue.length) { g.phase = 'over'; ev(g, { t: 'over' }); return; }
+    g.turn = g.queue[0];
+  }
+
+  function standings(g) {
+    const rows = g.players.map((p, i) => ({ i, name: p.name, score: score(p), cards: p.bank.length }));
+    rows.sort((a, b) => b.score - a.score || b.cards - a.cards);
+    const top = rows[0];
+    rows.forEach(r => { r.win = r.score === top.score && r.cards === top.cards; });
+    return rows;
+  }
+
+  // short code so linked phones can confirm they show the same game
+  const B32 = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+  function check(g) {
+    const s = JSON.stringify([g.players.map(p => [p.up, p.bank]), g.deck.length, g.turn, g.phase, g.rng, g.moveNo]);
+    let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+    let out = ''; for (let k = 0; k < 4; k++) { out += B32[h & 31]; h >>>= 5; } return out;
+  }
+
+  return { VERSION, COLORS, RAINBOW, CARDS, REMOVE, card, label, newGame, decision, apply, takeable, colorsUp, hasColor, score, upValue, upNumbers, standings, check, B32 };
+})();
+if (typeof module !== 'undefined') module.exports = KF;
+
+// Kite Five robots and hints. Robots only use what is visible on the table, like a person would.
+const KAI = (() => {
+  const { CARDS, RAINBOW, COLORS } = KF;
+  function rnd(g, salt) { // repeatable per move, so linked phones make the same robot choices
+    let h = (g.seed ^ Math.imul(g.moveNo + 1, 0x9E3779B1) ^ Math.imul(salt + 7, 0x85EBCA6B)) >>> 0;
+    h = Math.imul(h ^ (h >>> 16), 0x7FEB352D) >>> 0; h = Math.imul(h ^ (h >>> 15), 0x846CA68B) >>> 0;
+    return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+  }
+  function unseen(g) {
+    const seen = new Set(g.discard);
+    g.players.forEach(p => { p.up.forEach(id => seen.add(id)); p.bank.forEach(id => seen.add(id)); });
+    const out = []; for (let id = 0; id < CARDS.length; id++) if (!seen.has(id)) out.push(id);
+    return out;
+  }
+  const pct = x => `${Math.round(x * 100)}%`;
+  const numsText = ns => { const a = [...ns].sort(); return a.length === 1 ? `a ${a[0]}` : a.slice(0, -1).join(', ') + ' or ' + a[a.length - 1]; };
+
+  // chances and values for the player whose turn it is
+  function weigh(g, i) {
+    const me = g.players[i], S = KF.upValue(me), nums = KF.upNumbers(me), pool = unseen(g);
+    const pB = nums.size / 6, vBank = (1 - pB) * S;
+    let tangle = 0, vDraw = 0;
+    const mine = KF.colorsUp(me);
+    pool.forEach(id => {
+      const k = CARDS[id];
+      if (k.c === RAINBOW || !mine.has(k.c)) {
+        const S2 = S + k.n, n2 = new Set(nums); if (k.n) n2.add(k.n);
+        const five = k.c !== RAINBOW && mine.size === 4;
+        vDraw += five ? S2 : (1 - n2.size / 6) * S2;
+      } else if (g.players.some((p, j) => j !== i && !KF.hasColor(p, k.c))) vDraw += vBank;
+      else tangle++;
+    });
+    const n = pool.length || 1;
+    return { S, nums, pB, vBank, pD: tangle / n, vDraw: vDraw / n };
+  }
+
+  function giveValue(g, j, id) { // how much a card helps player j (lower is better to give)
+    const p = g.players[j], k = CARDS[id], S = KF.upValue(p), nums = KF.upNumbers(p);
+    const fresh = k.n && !nums.has(k.n);
+    let v = k.n * (1 - (nums.size + (fresh ? 1 : 0)) / 6) - (fresh ? S / 6 : 0);
+    if (KF.colorsUp(p).size === 4) v += 20 + S + k.n; // would hand them a Kite Five
+    const lead = KF.score(p) - Math.max(...g.players.map(KF.score));
+    return v + (lead === 0 ? 1.5 : 0);
+  }
+  function takeValue(g, i, id) {
+    const me = g.players[i], k = CARDS[id], S = KF.upValue(me), nums = KF.upNumbers(me);
+    const fresh = k.n && !nums.has(k.n);
+    let v = k.n - (fresh ? (S + k.n) / 6 : 0);
+    if (k.c !== RAINBOW && KF.colorsUp(me).size === 4) v += 20;
+    else if (k.c !== RAINBOW) v += 0.4; // one step closer to Kite Five
+    return v;
+  }
+
+  function decide(g) {
+    const d = KF.decision(g); if (!d) return null;
+    const p = g.players[d.who], lvl = p.level || 2, r = rnd(g, d.who);
+    if (d.kind === 'turn') {
+      if (d.options.length === 1) return { t: d.options[0] };
+      const w = weigh(g, d.who);
+      if (lvl === 1) return { t: (w.S >= 9 || (p.up.length >= 2 && r < 0.35)) ? 'bank' : 'draw' };
+      const bias = lvl === 2 ? 1.1 + r * 0.5 : 3; // tested in simulation: early, frequent reeling in wins more
+      return { t: w.vBank * bias >= w.vDraw ? 'bank' : 'draw' };
+    }
+    if (d.kind === 'give') {
+      if (lvl === 1) return { t: 'give', to: d.options[Math.floor(r * d.options.length)] };
+      let best = d.options[0], bv = Infinity;
+      d.options.forEach(j => { const v = giveValue(g, j, d.card); if (v < bv) { bv = v; best = j; } });
+      return { t: 'give', to: best };
+    }
+    if (d.kind === 'take') {
+      if (lvl === 1) return { t: 'take', card: r < 0.8 ? d.options[Math.floor(rnd(g, 99) * d.options.length)] : null };
+      let best = null, bv = lvl === 3 ? 0 : -Infinity;
+      d.options.forEach(id => { const v = lvl === 3 ? takeValue(g, d.who, id) : CARDS[id].n + (CARDS[id].c !== RAINBOW ? 0.1 : 0); if (v > bv) { bv = v; best = id; } });
+      return { t: 'take', card: best };
+    }
+  }
+
+  // advice for a person, using the strongest robot's thinking, in plain words
+  function hint(g) {
+    const d = KF.decision(g); if (!d) return null;
+    const i = d.who, me = g.players[i];
+    if (d.kind === 'turn') {
+      if (d.options.length === 1) return { act: { t: d.options[0] }, text: d.options[0] === 'bank' ? 'This is your last flight, so reeling in is the only move.' : 'You have no kites in the air yet, so launch one.' };
+      const w = weigh(g, i), bank = w.vBank * 3 >= w.vDraw;
+      const rollTxt = w.nums.size ? `A roll of ${numsText(w.nums)} tangles you (${w.nums.size} of 6 numbers, ${pct(w.pB)}).` : 'You only fly 0s, so no roll can tangle you.';
+      const drawTxt = `Launching tangles you about ${pct(w.pD)} of the time, when the kite's color is one every player already flies.`;
+      return { act: { t: bank ? 'bank' : 'draw' },
+        text: `${bank ? 'Reel in' : 'Launch another kite'}. You have ${w.S} point${w.S === 1 ? '' : 's'} in the air. ${rollTxt} ${drawTxt}` +
+          (KF.colorsUp(me).size === 4 && !bank ? ' You fly four colors, so the fifth would be a Kite Five.' : '') };
+    }
+    if (d.kind === 'give') {
+      let best = d.options[0], bv = Infinity;
+      d.options.forEach(j => { const v = giveValue(g, j, d.card); if (v < bv) { bv = v; best = j; } });
+      const p = g.players[best], k = CARDS[d.card];
+      const why = KF.colorsUp(p).size < 4 ? (k.n && !KF.upNumbers(p).has(k.n) && KF.upValue(p) ? `It adds a new number to ${p.name}'s kites, so their next roll is riskier.` : `It helps ${p.name} the least.`) : `Nobody else would be safer to give it to.`;
+      const avoid = d.options.filter(j => KF.colorsUp(g.players[j]).size === 4).map(j => g.players[j].name);
+      return { act: { t: 'give', to: best }, text: `Give it to ${p.name}. ${why}` + (avoid.length ? ` Avoid ${avoid.join(' and ')}, who would get a Kite Five.` : '') };
+    }
+    if (d.kind === 'take') {
+      let best = null, bv = 0;
+      d.options.forEach(id => { const v = takeValue(g, i, id); if (v > bv) { bv = v; best = id; } });
+      if (best === null) return { act: { t: 'take', card: null }, text: 'Skip it. Each card here would add a number your next roll could hit, which risks more than it is worth.' };
+      return { act: { t: 'take', card: best }, text: `Take the ${KF.label(best)}. ${KF.colorsUp(me).size === 4 && CARDS[best].c !== RAINBOW ? 'It completes your Kite Five.' : 'It is the best value for the risk it adds.'}` };
+    }
+  }
+  return { decide, hint, weigh, unseen };
+})();
+if (typeof module !== 'undefined') module.exports = KAI;
+
+// Kite Five live link: a direct phone-to-phone connection (WebRTC). The host sends an invite link, the guest sends
+// back a reply code, and then moves travel on their own. No server and no accounts. A public address-lookup
+// server (STUN) helps the two phones find each other across different networks.
+const NET = (() => {
+  const CFG = { iceServers: [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] }] };
+  const supported = () => typeof RTCPeerConnection !== 'undefined';
+  const b64u = bytes => { let s = ''; bytes.forEach(b => { s += String.fromCharCode(b); }); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); };
+  const unb64u = str => { const s = atob(str.replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from(s, c => c.charCodeAt(0)); };
+  async function pack(obj) {
+    const raw = new TextEncoder().encode(JSON.stringify(obj));
+    if (typeof CompressionStream !== 'undefined') {
+      try { const out = await new Response(new Blob([raw]).stream().pipeThrough(new CompressionStream('deflate-raw'))).arrayBuffer(); return 'z' + b64u(new Uint8Array(out)); } catch (e) { /* fall through */ }
+    }
+    return 'r' + b64u(raw);
+  }
+  async function unpack(str) {
+    str = String(str || '').trim();
+    const m = str.match(/[#&?]join=([A-Za-z0-9_-]+)/); if (m) str = m[1];
+    str = str.replace(/^KITE-REPLY[:\s]*/i, '').replace(/\s+/g, '');
+    const kind = str[0], body = unb64u(str.slice(1));
+    let bytes = body;
+    if (kind === 'z') bytes = new Uint8Array(await new Response(new Blob([body]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer());
+    else if (kind !== 'r') throw new Error('not a Kite Five code');
+    return JSON.parse(new TextDecoder().decode(bytes));
+  }
+  function waitIce(pc, ms) {
+    return new Promise(res => {
+      if (pc.iceGatheringState === 'complete') return res();
+      const t = setTimeout(res, ms);
+      pc.addEventListener('icegatheringstatechange', () => { if (pc.iceGatheringState === 'complete') { clearTimeout(t); res(); } });
+    });
+  }
+  let was = new WeakMap();
+  function watch(pc, onState) { // a dropped phone shows right away, and a recovered one comes back
+    const st = pc.connectionState, prev = was.get(pc);
+    if (['disconnected', 'failed', 'closed'].includes(st)) { if (prev !== 'down') onState('closed'); was.set(pc, 'down'); }
+    else if (st === 'connected' && prev === 'down') { was.set(pc, 'up'); onState('open'); }
+  }
+  function wire(dc, onMsg, onState) {
+    dc.onmessage = e => { try { onMsg(JSON.parse(e.data)); } catch (err) { /* ignore garbled message */ } };
+    dc.onopen = () => onState('open'); dc.onclose = () => onState('closed'); dc.onerror = () => onState('closed');
+    return { send: m => { if (dc.readyState === 'open') dc.send(JSON.stringify(m)); }, open: () => dc.readyState === 'open', close: () => { try { dc.close(); } catch (e) { /* ignore */ } } };
+  }
+  // host: one invitation per remote seat
+  async function invite(info, onMsg, onState) {
+    const pc = new RTCPeerConnection(CFG), dc = pc.createDataChannel('kite', { ordered: true });
+    const link = wire(dc, onMsg, onState);
+    pc.onconnectionstatechange = () => watch(pc, onState);
+    await pc.setLocalDescription(await pc.createOffer()); await waitIce(pc, 3000);
+    const code = await pack(Object.assign({ sdp: pc.localDescription.sdp }, info));
+    return { pc, link, code, accept: async reply => { const r = await unpack(reply); if (!r.sdp || !/^v=0/.test(r.sdp)) throw new Error('not a reply code'); await pc.setRemoteDescription({ type: 'answer', sdp: r.sdp }); } };
+  }
+  // guest: answer an invitation
+  async function answer(inviteCode, onMsg, onState) {
+    const o = await unpack(inviteCode);
+    if (!o.sdp || !/^v=0/.test(o.sdp)) throw new Error('not an invite');
+    const pc = new RTCPeerConnection(CFG); let link = null;
+    pc.ondatachannel = e => { link = wire(e.channel, onMsg, onState); api.link = link; if (e.channel.readyState === 'open') onState('open'); };
+    pc.onconnectionstatechange = () => watch(pc, onState);
+    await pc.setRemoteDescription({ type: 'offer', sdp: o.sdp });
+    await pc.setLocalDescription(await pc.createAnswer()); await waitIce(pc, 3000);
+    const api = { pc, link, info: o, code: 'KITE-REPLY:' + await pack({ sdp: pc.localDescription.sdp }) };
+    return api;
+  }
+  return { supported, invite, answer, pack, unpack };
+})();
+
+// The coached practice game: a fixed opening so the main situations come up early, on a short deck.
+const PRACTICE = {
+  seed: 20261120,
+  preset: id => ({
+    size: 22,
+    top: [id(0, 4), id(4, 2), id(3, 3), id(0, 5), id(2, 1), id(5, 6), id(1, 1), id(4, 6), id(0, 2), id(3, 1), id(2, 5)],
+    rolls: [6, 3, 2, 5]
+  })
+};
+if (typeof module !== 'undefined') module.exports = PRACTICE;
+
+// Kite Five screens. Needs KF (rules), KAI (robots), NET (live link), PRACTICE.
+(() => {
+  const $ = s => document.querySelector(s);
+  const view = $('#view'), live = $('#live'), meta = $('#meta'), dlg = $('#dlg'), dlgBody = $('#dlgBody');
+  const KEY = 'kitefive-v1';
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const ROBOTS = ['Breezy', 'Gusty', 'Zephyr', 'Skye', 'Drift', 'Puffin'];
+  const LEVEL = { 1: 'Easy', 2: 'Normal', 3: 'Hard' };
+  const C = KF.COLORS;
+  const cardId = (c, n, k = 0) => { let seen = 0; for (let i = 0; i < KF.CARDS.length; i++) { const x = KF.CARDS[i]; if (x.c === c && x.n === n) { if (seen === k) return i; seen++; } } return -1; };
+  const andList = a => a.length <= 2 ? a.join(' and ') : a.slice(0, -1).join(', ') + ', and ' + a[a.length - 1];
+  const orList = a => a.length <= 2 ? a.join(' or ') : a.slice(0, -1).join(', ') + ', or ' + a[a.length - 1];
+  const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
+
+  /* ---------- saved state ---------- */
+  function load() { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } }
+  const S = load();
+  S.prefs = Object.assign({ sound: true, pace: 'normal' }, S.prefs || {});
+  S.setup = Object.assign({ mode: 'pass', seats: [{ name: '', kind: 'here', level: 2 }, { name: '', kind: 'robot', level: 2 }, { name: '', kind: 'robot', level: 3 }] }, S.setup || {});
+  if (S.game && S.game.v !== KF.VERSION) { S.game = null; S.meta = null; }
+  if (!S.game) S.screen = 'home';
+  if (S.meta && S.meta.mode === 'guest') { S.game = null; S.meta = null; S.screen = 'home'; }
+  S.screen = S.screen || 'home';
+  function save() {
+    try {
+      const guest = S.meta && S.meta.mode === 'guest';
+      const o = guest ? { prefs: S.prefs, setup: S.setup, screen: 'home' } : { prefs: S.prefs, setup: S.setup, game: S.game, meta: S.meta, screen: ['game', 'lobby'].includes(S.screen) ? S.screen : 'home' };
+      localStorage.setItem(KEY, JSON.stringify(o));
+    } catch (e) { /* private mode: play on without saving */ }
+  }
+  let undo = [];
+  const snap = () => { undo.push(JSON.stringify({ g: S.game, m: S.meta })); if (undo.length > 60) undo.shift(); };
+  let hintOn = null; // hint for the current decision
+  function say(msg) { live.textContent = ''; setTimeout(() => { live.textContent = msg; }, 40); }
+
+  /* ---------- sound ---------- */
+  let ac = null;
+  function audio() { if (!S.prefs.sound) return null; try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); if (ac.state === 'suspended') ac.resume(); } catch (e) { ac = null; } return ac; }
+  function tone(f, dur, type, vol, delay) {
+    const a = audio(); if (!a) return;
+    try { const o = a.createOscillator(), g = a.createGain(), t = a.currentTime + (delay || 0); o.type = type || 'sine'; o.frequency.value = f;
+      g.gain.setValueAtTime(vol || 0.12, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur); o.connect(g); g.connect(a.destination); o.start(t); o.stop(t + dur + 0.05); } catch (e) { /* no sound */ }
+  }
+  const sfx = {
+    keep: () => tone(740, 0.12, 'triangle'),
+    give: () => { tone(520, 0.1, 'triangle'); tone(390, 0.14, 'triangle', 0.1, 0.1); },
+    bank: () => { tone(660, 0.12); tone(880, 0.16, 'sine', 0.12, 0.11); },
+    tangle: () => tone(150, 0.6, 'sawtooth', 0.13),
+    five: () => [523, 659, 784, 1047, 1319].forEach((f, i) => tone(f, 0.18, 'triangle', 0.12, i * 0.09)),
+    roll: () => tone(300, 0.05, 'square', 0.05)
+  };
+
+  /* ---------- drawing pieces ---------- */
+  const SHAPES = [
+    '<polygon points="10,1 19,10 10,19 1,10"/>', '<polygon points="10,2 19,18 1,18"/>', '<circle cx="10" cy="10" r="8.5"/>',
+    '<rect x="2.5" y="2.5" width="15" height="15"/>', '<polygon points="10,1 18,5.5 18,14.5 10,19 2,14.5 2,5.5"/>',
+    '<polygon points="10,1 12.6,7.2 19,7.6 14,11.8 15.6,18.5 10,14.8 4.4,18.5 6,11.8 1,7.6 7.4,7.2"/>'
+  ];
+  const shape = c => `<svg class="sh" viewBox="0 0 20 20" aria-hidden="true">${SHAPES[c]}</svg>`;
+  function kc(id, big) {
+    const k = KF.card(id), col = C[k.c];
+    return `<span class="kc c${k.c}${big ? ' big' : ''}" role="img" aria-label="${col.name} ${col.shape} kite, ${k.n}">${shape(k.c)}<span aria-hidden="true">${k.n}</span>${big ? `<span class="nm" aria-hidden="true">${col.name}</span>` : ''}</span>`;
+  }
+  const label = id => KF.label(id);
+  const KITE = '<svg viewBox="0 0 32 32" aria-hidden="true"><polygon points="16,2 27,13 16,26 5,13" fill="#1E63B0"/><polygon points="16,2 27,13 16,13" fill="#C8233A"/><polygon points="16,13 5,13 16,26" fill="#F2C230"/><path d="M16 26 C 13 28, 19 29, 15 31" stroke="#1F8048" stroke-width="2" fill="none"/></svg>';
+  const SKY = `<svg class="sky" viewBox="0 0 360 140" role="img" aria-label="Five kites flying in a blue sky">
+    <rect width="360" height="140" rx="18" fill="#BFE0FA"/><ellipse cx="70" cy="120" rx="90" ry="26" fill="#fff" opacity=".8"/><ellipse cx="290" cy="126" rx="110" ry="24" fill="#fff" opacity=".8"/>
+    ${[[50, 40, '#C8233A'], [120, 22, '#D24E12'], [185, 50, '#F2C230'], [250, 26, '#1F8048'], [312, 44, '#1E63B0']].map(([x, y, f], i) =>
+      `<g transform="translate(${x} ${y}) rotate(${(i % 2 ? 1 : -1) * 10})"><polygon points="0,-18 14,0 0,24 -14,0" fill="${f}" stroke="#13243A" stroke-width="1.5"/><path d="M0 24 q -8 10 0 18 q 8 8 0 18" stroke="#13243A" stroke-width="1.5" fill="none"/></g>`).join('')}</svg>`;
+
+  function seatNames(seats) {
+    return seats.map((s, i) => s.kind === 'robot' ? ROBOTS[i] : (s.name.trim() || `Player ${i + 1}`));
+  }
+
+  /* ---------- who controls what ---------- */
+  const mode = () => (S.meta && S.meta.mode) || 'pass';
+  function iControl(seat) {
+    const g = S.game, p = g.players[seat];
+    if (p.kind === 'robot') return false;
+    if (mode() === 'guest') return S.meta.mine.includes(seat);
+    if (mode() === 'host') return S.meta.where[seat] === 'here';
+    return true;
+  }
+  const runsRobots = () => mode() !== 'guest';
+
+  /* ---------- narration ---------- */
+  function line(e, g) {
+    const n = i => g.players[i].name, col = id => C[KF.card(id).c].name.toLowerCase();
+    const v = (i, he, you) => g.players[i].name === 'You' ? you : he;
+    switch (e.t) {
+      case 'keep': return KF.card(e.card).c === KF.RAINBOW ? `${n(e.who)} launched a Rainbow ${KF.card(e.card).n}. Rainbow kites always stay.` : `${n(e.who)} launched a ${label(e.card)} and ${v(e.who, 'keeps', 'keep')} it flying.`;
+      case 'mustgive': return `${n(e.who)} launched a ${label(e.card)} but already ${v(e.who, 'flies', 'fly')} ${col(e.card)}, so it goes to someone else.`;
+      case 'give': return `${n(e.who)} gave the ${label(e.card)} to ${n(e.to)}.`;
+      case 'tangle': return e.why === 'color' ? `${n(e.who)} launched a ${label(e.card)}, and every player already flies ${col(e.card)}. Tangled!` : `${n(e.who)} rolled a ${e.roll} and ${v(e.who, 'flies', 'fly')} a ${e.roll}. Tangled!`;
+      case 'bank': return `${n(e.who)} rolled a ${e.roll} and reeled in ${plural(e.cards.length, 'kite')} for ${plural(e.pts, 'point')}.`;
+      case 'take': return `${n(e.who)} grabbed the ${label(e.card)} from ${n(e.from)}.`;
+      case 'pass': return `${n(e.who)} took nothing from ${n(e.from)}.`;
+      case 'cant': return `${n(e.who)} already ${v(e.who, 'flies', 'fly')} those colors, so can't take any of ${n(e.from)}'s kites.`;
+      case 'drop': return `${v(e.who, n(e.who) + "'s", 'Your')} other ${e.cards.length === 1 ? 'kite blows' : 'kites blow'} away.`;
+      case 'five': return `Kite Five! ${n(e.who)} ${v(e.who, 'flies', 'fly')} all five colors and ${v(e.who, 'reels', 'reel')} in ${plural(e.pts, 'point')} at once.`;
+      case 'final': return 'The deck is empty. Last flight: everyone gets one more turn, and it must be a reel-in.';
+      case 'skip': return `${n(e.who)} ${v(e.who, 'has', 'have')} nothing in the air, so ${v(e.who, 'sits', 'sit')} out the last flight.`;
+      case 'over': return 'Game over!';
+    }
+    return '';
+  }
+  let lastSaid = -1;
+  function announce(g) {
+    const fresh = g.log.filter(e => e.no > lastSaid);
+    if (!fresh.length) return;
+    lastSaid = g.moveNo;
+    say(fresh.map(e => line(e, g)).join(' '));
+    const t = fresh.map(e => e.t);
+    if (t.includes('five')) sfx.five(); else if (t.includes('tangle')) sfx.tangle(); else if (t.includes('bank')) sfx.bank(); else if (t.includes('give') || t.includes('take')) sfx.give(); else if (t.includes('keep')) sfx.keep();
+  }
+
+  /* ---------- practice coach ---------- */
+  function coachPick(g) {
+    if (mode() !== 'practice') return null;
+    const seen = S.meta.coach = S.meta.coach || {};
+    const d = KF.decision(g), me = g.players[0], recent = g.log.filter(e => e.no >= g.moveNo - 3);
+    const cand = [];
+    if (g.moveNo === 0) cand.push(['start', 'Welcome to Kite Five! On your turn you either launch a kite (draw a card) or reel in (roll the die to bank every kite you have flying). Reeled-in kites are safe points. Kites still in the air can be lost. Tap "Launch a kite" to begin.']);
+    const ek = recent.find(e => e.t === 'keep' && e.who === 0 && KF.card(e.card).c !== KF.RAINBOW);
+    if (ek) cand.push(['keep', `You keep the ${label(ek.card)} because you had no ${C[KF.card(ek.card).c].name.toLowerCase()} kite flying. It is in the air, not safe yet. Its number matters too. When you reel in, a die roll that matches any number you fly tangles you.`]);
+    if (d && d.kind === 'give' && d.who === 0) cand.push(['give', `You already fly ${C[KF.card(d.card).c].name.toLowerCase()}, so this kite can't stay with you. It must go to a player who has no ${C[KF.card(d.card).c].name.toLowerCase()} kite. You choose who. A new number makes that player's next roll riskier.`]);
+    if (d && d.kind === 'turn' && d.who === 0 && d.options.length === 2 && seen.give) cand.push(['choose', 'You have a kite in the air, so you can reel in now. You roll the die. If the roll matches a number on one of your flying kites, you tangle. Otherwise every flying kite becomes safe points. Tap Hint whenever you want advice.']);
+    if (d && d.kind === 'turn' && d.who === 0 && d.options.length === 2 && !seen.give && seen.keep && g.moveNo <= 4) cand.push(['try', 'You could reel in now, but for practice, try launching one more kite to see what happens with a color you already fly.']);
+    const eb = recent.find(e => e.t === 'bank'); if (eb) cand.push(['bank', `${g.players[eb.who].name} reeled in. Those kites are now safe for the rest of the game, and only reeled-in points count at the end.`]);
+    const et = recent.find(e => e.t === 'tangle'); if (et) cand.push(['tangle', `${g.players[et.who].name} got tangled! Going around the table, each other player may grab one of those kites, but not a color they already fly. Whatever is left blows away.`]);
+    if (d && d.kind === 'take' && d.who === 0) cand.push(['take', `You may grab one of ${g.players[d.from].name}'s kites. Colors you already fly aren't allowed, but rainbow kites always are. Each new number you take adds risk to your next reel-in.`]);
+    const er = recent.find(e => e.t === 'keep' && KF.card(e.card).c === KF.RAINBOW); if (er) cand.push(['rainbow', 'A rainbow kite has no color, so whoever launches it always keeps it, even with another rainbow already flying.']);
+    if (KF.colorsUp(me).size >= 3 || g.moveNo >= 16) cand.push(['five', 'If you ever fly all five colors at the same time, that is a Kite Five! All of your flying kites reel in at once with no roll, even on someone else\'s turn.']);
+    if (recent.some(e => e.t === 'final')) cand.push(['final', 'The deck is empty, so this is the last flight. Everyone gets one more turn, and that turn must be a reel-in. Anyone who has already had a last turn can no longer grab kites.']);
+    if (g.phase === 'over') cand.push(['over', 'That is the whole game. Reeled-in points win, and a tie goes to whoever reeled in more kites. Ready for a real game? Tap Home, then Set up a game.']);
+    const pick = cand.find(([k]) => !seen[k]);
+    return pick ? { key: pick[0], text: pick[1] } : null;
+  }
+
+  /* ---------- screens ---------- */
+  function home() {
+    meta.textContent = '';
+    const resume = S.game && S.game.phase !== 'over' && mode() !== 'guest';
+    return `<div class="hero">${SKY}<p class="tagline">A push-your-luck kite game</p><h1 tabindex="-1">Kite Five</h1>
+      <p class="muted">Launch kites, dodge tangles, and reel them in before your luck runs out. For 2 to 6 players, with robots if you want them.</p></div>
+      ${resume ? '<button type="button" class="btn btn-primary btn-big" data-act="resume">Back to your game</button>' : ''}
+      <button type="button" class="btn ${resume ? '' : 'btn-primary btn-big'}" data-act="practice">Practice with a coach<span class="sub">A short game against two robots, with tips as you go</span></button>
+      <button type="button" class="btn" data-act="go" data-v="setup">Set up a game</button>
+      <button type="button" class="btn" data-act="go" data-v="join">Join a game on another phone</button>
+      <button type="button" class="linkbtn" data-act="rules">How to play</button>
+      <p class="small muted center">Build b52e0ce4 · works offline</p>
+      <p class="small muted center">Inspired by the card game Sky 5. Name, art, and robots are our own.</p>`;
+  }
+
+  function setupScreen() {
+    meta.textContent = 'New game';
+    const st = S.setup, m = st.mode;
+    const kinds = m === 'live' ? [['here', 'Person here'], ['remote', 'Other phone'], ['robot', 'Robot']] : [['here', 'Person'], ['robot', 'Robot']];
+    const rows = st.seats.map((s, i) => {
+      const kind = (m !== 'live' && s.kind === 'remote') ? 'here' : s.kind;
+      const nameCell = kind === 'robot' ? `<select aria-label="Seat ${i + 1} robot level" data-field="level" data-i="${i}">${[1, 2, 3].map(l => `<option value="${l}"${s.level === l ? ' selected' : ''}>${ROBOTS[i]}, ${LEVEL[l].toLowerCase()}</option>`).join('')}</select>`
+        : kind === 'remote' ? '<span class="small muted">Name comes from their phone</span>'
+          : `<input type="text" aria-label="Seat ${i + 1} name" placeholder="Player ${i + 1}" data-field="name" data-i="${i}" value="${esc(s.name)}" maxlength="14" autocomplete="off">`;
+      return `<div class="seat"><select aria-label="Seat ${i + 1} is" data-field="kind" data-i="${i}">${kinds.map(([v, t]) => `<option value="${v}"${kind === v ? ' selected' : ''}>${t}</option>`).join('')}</select>${nameCell}
+        <button type="button" class="xbtn" data-act="delseat" data-i="${i}" aria-label="Remove seat ${i + 1}"${st.seats.length <= 2 ? ' disabled' : ''}>&times;</button></div>`;
+    }).join('');
+    const about = {
+      pass: 'Everyone shares this phone and taps their own moves. Robots move on their own.',
+      mirror: 'Every phone runs the same game from one code, so launches and rolls match. On a call or at the table, whoever moves says it out loud and everyone taps it. Works offline.',
+      live: 'Moves show up on the other phones by themselves. You send each person an invite link, and they text you back a reply code. Everyone needs internet.'
+    }[m];
+    const people = st.seats.filter(s => s.kind !== 'robot').length, remote = st.seats.filter(s => s.kind === 'remote').length;
+    const startLabel = m === 'pass' ? 'Start the game' : m === 'mirror' ? 'Get a game code' : 'Open the lobby';
+    const block = m === 'live' && !NET.supported() ? 'This browser cannot make live links.' : m === 'live' && !remote ? 'Set at least one seat to "Other phone."' : people < 1 && m !== 'live' ? 'Add at least one person.' : '';
+    return `<h2 tabindex="-1">Set up a game</h2>
+      <div class="seg" role="group" aria-label="Play on">${[['pass', 'One phone'], ['mirror', 'Mirror phones'], ['live', 'Live link']].map(([v, t]) => `<button type="button" data-act="setmode" data-v="${v}" aria-pressed="${m === v}">${t}</button>`).join('')}</div>
+      <p class="small muted">${about}</p>
+      <div class="panel stack"><h3>Players, in seating order</h3>${rows}
+        <button type="button" class="btn" data-act="addseat"${st.seats.length >= 6 ? ' disabled' : ''}>Add a seat</button>
+        <p class="small muted">Robots: easy takes wild chances, normal plays sensibly, hard plays carefully and is tough to beat.</p></div>
+      ${block ? `<p class="warn">${block}</p>` : ''}
+      <button type="button" class="btn btn-primary btn-big" data-act="start"${block ? ' disabled' : ''}>${startLabel}</button>
+      <button type="button" class="linkbtn" data-act="go" data-v="home">Back</button>`;
+  }
+
+  function mirrorCodeScreen() {
+    meta.textContent = 'Mirror game';
+    return `<h2 tabindex="-1">Your game code</h2>
+      <div class="code" aria-label="Game code ${S.meta.code.split('').join(' ')}">${esc(S.meta.code)}</div>
+      <p>Read this code to the other players. On their phones they open Kite Five, tap <b>Join a game on another phone</b>, and type it in.</p>
+      <p class="small muted">Each phone shows the same deck and the same die rolls. When someone moves, say it out loud ("I launch," "I give it to Sam") and everyone taps the same thing. A check code on screen lets you confirm every phone matches.</p>
+      <button type="button" class="btn btn-primary btn-big" data-act="go" data-v="game">Start playing</button>`;
+  }
+
+  let joinTab = 'mirror', joinErr = '', parsed = null;
+  function joinScreen() {
+    meta.textContent = 'Join';
+    let body = '';
+    if (joinTab === 'mirror') {
+      body = `<p class="small muted">For a mirror game, type the code the host reads to you.</p>
+        <label for="jcode">Game code</label><input type="text" id="jcode" data-field="jcode" autocapitalize="characters" autocomplete="off" placeholder="XXXX-XXXX-XXX" value="${esc(parsed ? parsed.raw : '')}">
+        <button type="button" class="btn" data-act="readcode">Look up this code</button>`;
+      if (parsed && parsed.ok) {
+        body += `<div class="panel stack"><h3>Seats in this game</h3>${parsed.kinds.map((k, i) => k ? `<p>${i + 1}. ${ROBOTS[i]} (robot, ${LEVEL[k].toLowerCase()})</p>` :
+          `<label for="jn${i}">${i + 1}. Person</label><input type="text" id="jn${i}" data-field="jname" data-i="${i}" placeholder="Player ${i + 1}" maxlength="14" value="${esc(parsed.names[i] || '')}">`).join('')}
+          <p class="small muted">Names are just for this phone. Use the same seating order as the host.</p></div>
+          <button type="button" class="btn btn-primary btn-big" data-act="joinmirror">Join this game</button>`;
+      }
+    } else {
+      body = `<p class="small muted">For a live game, tap the invite link the host sent you. If it opened somewhere else, paste the whole link or invite code here.</p>
+        <textarea id="jlink" data-field="jlink" aria-label="Invite link or code"></textarea>
+        <button type="button" class="btn btn-primary" data-act="readinvite">Use this invite</button>`;
+    }
+    return `<h2 tabindex="-1">Join a game</h2>
+      <div class="seg" role="group" aria-label="Kind of game">${[['mirror', 'Mirror code'], ['live', 'Live invite']].map(([v, t]) => `<button type="button" data-act="jointab" data-v="${v}" aria-pressed="${joinTab === v}">${t}</button>`).join('')}</div>
+      ${body}${joinErr ? `<p class="warn" role="alert">${esc(joinErr)}</p>` : ''}
+      <button type="button" class="linkbtn" data-act="go" data-v="home">Back</button>`;
+  }
+
+  /* ---------- live link: host side ---------- */
+  const conns = {}; // seat -> { inv, link, status, code }
+  function hostMsg(seat, m) {
+    if (m.t === 'hi') {
+      S.meta.names[seat] = String(m.name || '').slice(0, 14) || `Player ${seat + 1}`;
+      if (S.game) S.game.players[seat].name = S.meta.names[seat];
+      save(); broadcast(); render();
+    } else if (m.t === 'act' && S.game) {
+      const d = KF.decision(S.game);
+      if (d && d.who === seat && m.no === S.game.moveNo) doAct(m.a, true);
+      else sendTo(seat);
+    }
+  }
+  function hostState(seat, st) {
+    const c = conns[seat]; if (!c) return;
+    c.status = st === 'open' ? 'on' : 'off';
+    if (st === 'open') { sendTo(seat); say(`${S.meta.names[seat] || 'A player'} connected.`); }
+    render();
+  }
+  function payload(seat) {
+    return S.game ? { t: 'state', g: S.game, you: seat, where: S.meta.where } : { t: 'lobby', you: seat, names: S.meta.names, where: S.meta.where, on: S.meta.where.map((w, i) => w !== 'remote' || (conns[i] && conns[i].status === 'on')) };
+  }
+  function sendTo(seat) { const c = conns[seat]; if (c && c.link && c.link.open()) c.link.send(payload(seat)); }
+  function broadcast() { if (mode() !== 'host') return; Object.keys(conns).forEach(s => sendTo(Number(s))); }
+  async function makeInvite(seat) {
+    const old = conns[seat]; if (old && old.inv) { try { old.inv.pc.close(); } catch (e) { /* ignore */ } }
+    conns[seat] = { status: 'making' }; render();
+    try {
+      const inv = await NET.invite({ s: seat, g: S.meta.gid }, m => hostMsg(seat, m), st => hostState(seat, st));
+      conns[seat] = { inv, link: inv.link, status: 'invited', url: location.href.split('#')[0] + '#join=' + inv.code };
+    } catch (e) { conns[seat] = { status: 'error', err: 'Could not make an invite on this phone.' }; }
+    render();
+  }
+  async function acceptReply(seat, text) {
+    const c = conns[seat]; if (!c || !c.inv) return;
+    try { await c.inv.accept(text); c.status = 'connecting'; c.err = ''; } catch (e) { c.err = 'That doesn\'t look like a reply code for this invite. Ask them to copy the whole thing.'; }
+    render();
+  }
+  function inviteBlock(seat) {
+    const c = conns[seat] || {}, nm = S.meta.names[seat] || `Seat ${seat + 1}`;
+    const st = { on: '<span class="status ok">Connected</span>', invited: '<span class="status wait">Invite ready</span>', connecting: '<span class="status wait">Connecting…</span>', making: '<span class="status wait">Making an invite…</span>', off: '<span class="status wait">Not connected</span>', error: '<span class="status wait">Problem</span>' }[c.status] || '<span class="status wait">Not invited yet</span>';
+    let inner = '';
+    if (c.status === 'invited' || c.status === 'connecting' || (c.status === 'off' && c.url)) {
+      inner = `<p class="small">1. Send this invite link to ${esc(nm)}:</p>
+        <div class="row"><button type="button" class="btn" data-act="share" data-i="${seat}">Share invite</button><button type="button" class="btn" data-act="copyinv" data-i="${seat}">Copy invite</button></div>
+        <label for="rep${seat}" class="small">2. Paste the reply code they send back:</label>
+        <textarea id="rep${seat}" data-field="reply" data-i="${seat}" aria-label="Reply code from ${esc(nm)}"></textarea>
+        <button type="button" class="btn btn-primary" data-act="accept" data-i="${seat}">Connect</button>`;
+    }
+    const again = c.status !== 'on' && c.status !== 'making';
+    return `<div class="panel stack"><div class="row" style="align-items:center"><h3>${esc(nm)}</h3>${st}</div>
+      ${c.err ? `<p class="warn" role="alert">${esc(c.err)}</p>` : ''}${inner}
+      ${again ? `<button type="button" class="btn${c.status ? '' : ' btn-primary'}" data-act="invite" data-i="${seat}">${c.status ? 'Make a new invite' : 'Make an invite'}</button>` : ''}
+      ${S.game && c.status !== 'on' ? `<button type="button" class="linkbtn" data-act="takeover" data-i="${seat}">Play ${esc(nm)}'s turns on this phone instead</button>` : ''}</div>`;
+  }
+  function lobbyScreen() {
+    meta.textContent = 'Live lobby';
+    const w = S.meta.where, ready = w.every((k, i) => k !== 'remote' || (conns[i] && conns[i].status === 'on'));
+    return `<h2 tabindex="-1">Live lobby</h2>
+      <p class="small muted">Invite each person on another phone. The invite opens Kite Five in their browser. They type their name and send you back a reply code. Text messages work well for both.</p>
+      ${w.map((k, i) => k === 'remote' ? inviteBlock(i) : '').join('')}
+      <div class="panel"><h3>Seats</h3><ol>${w.map((k, i) => `<li>${esc(k === 'robot' ? ROBOTS[i] + ' (robot)' : (S.meta.names[i] || `Player ${i + 1}`))}${k === 'remote' ? ' (other phone)' : k === 'here' ? ' (this phone)' : ''}</li>`).join('')}</ol></div>
+      <button type="button" class="btn btn-primary btn-big" data-act="hoststart"${ready ? '' : ' disabled'}>${ready ? 'Start the game' : 'Waiting for everyone to connect'}</button>
+      <p class="small muted">If a phone can't connect after a fresh invite, some cell networks block direct links. Try both phones on Wi-Fi, or play in mirror mode.</p>
+      <button type="button" class="linkbtn" data-act="leave">Cancel</button>`;
+  }
+
+  /* ---------- live link: guest side ---------- */
+  let guest = null; // { api, status, name, invite, err, lobby }
+  function guestMsg(m) {
+    if (m.t === 'lobby') { guest.lobby = m; S.screen = 'guestwait'; render(); }
+    else if (m.t === 'state') {
+      const first = !S.game || S.screen !== 'game';
+      S.game = m.g; S.meta = { mode: 'guest', mine: [m.you], where: m.where };
+      if (first) { lastSaid = S.game.moveNo; S.screen = 'game'; }
+      hintOn = null; render();
+    }
+  }
+  function guestState(st) {
+    if (!guest) return;
+    guest.status = st;
+    if (st === 'open') { guest.api.link.send({ t: 'hi', name: guest.name }); say('Connected to the host.'); if (S.screen === 'guestjoin') S.screen = 'guestwait'; }
+    if (st === 'closed') say('The connection to the host was lost.');
+    render();
+  }
+  function guestJoinScreen() {
+    meta.textContent = 'Join live game';
+    if (guest.api) return `<h2 tabindex="-1">Send this reply to the host</h2>
+      <p>Copy this reply code and text it back to whoever invited you. The game connects as soon as they paste it in.</p>
+      <div class="row"><button type="button" class="btn btn-primary" data-act="gshare">Share reply</button><button type="button" class="btn" data-act="gcopy">Copy reply</button></div>
+      <textarea readonly aria-label="Your reply code">${esc(guest.api.code)}</textarea>
+      <p class="status wait">${guest.status === 'open' ? 'Connected!' : 'Waiting for the host to connect…'}</p>
+      <p class="small muted">Keep this page open until the game starts.</p>`;
+    return `<h2 tabindex="-1">You're invited to Kite Five</h2>
+      <label for="gname">Your name</label><input type="text" id="gname" data-field="gname" maxlength="14" autocomplete="off" value="${esc(guest.name || '')}">
+      ${guest.err ? `<p class="warn" role="alert">${esc(guest.err)}</p>` : ''}
+      <button type="button" class="btn btn-primary btn-big" data-act="gmake"${guest.busy ? ' disabled' : ''}>${guest.busy ? 'Making your reply…' : 'Make my reply code'}</button>
+      <button type="button" class="linkbtn" data-act="leave">Cancel</button>`;
+  }
+  function guestWaitScreen() {
+    meta.textContent = 'Live game';
+    const L = guest && guest.lobby;
+    return `<h2 tabindex="-1">${guest && guest.status === 'closed' ? 'Connection lost' : 'Connected!'}</h2>
+      <p>${guest && guest.status === 'closed' ? 'Ask the host for a new invite link.' : 'Waiting for the host to start the game.'}</p>
+      ${L ? `<div class="panel"><h3>Seats</h3><ol>${L.where.map((k, i) => `<li>${esc(k === 'robot' ? ROBOTS[i] + ' (robot)' : (L.names[i] || `Player ${i + 1}`))}${i === L.you ? ' (you)' : ''}${L.on[i] ? '' : ' (not connected yet)'}</li>`).join('')}</ol></div>` : ''}`;
+  }
+
+  /* ---------- the game table ---------- */
+  function gameScreen() {
+    const g = S.game, d = KF.decision(g), m = mode();
+    meta.textContent = g.phase === 'over' ? 'Game over' : g.final ? 'Last flight' : `Deck: ${g.deck.length}`;
+    if (g.phase === 'over') return overScreen(g);
+    const coach = coachPick(g);
+    if (coach) S.meta.coachNow = coach.key;
+    const who = g.players[d.who], mineNow = iControl(d.who);
+    const lastNo = g.log.length ? g.log[g.log.length - 1].no : -1;
+    const news = g.log.filter(e => e.no === lastNo && e.t !== 'cant');
+    const prev = []; for (let i = g.log.length - 1; i >= 0 && prev.length < 5; i--) if (g.log[i].no !== lastNo) prev.push(g.log[i]);
+    const showCard = [...news].reverse().find(e => e.card !== undefined && ['keep', 'mustgive', 'give', 'tangle', 'take'].includes(e.t));
+    const showRoll = news.find(e => e.roll);
+    const tangled = news.some(e => e.t === 'tangle');
+    const visual = (showCard ? kc(showCard.card, true) : '') + (showRoll ? `<span class="die" role="img" aria-label="Die showing ${showRoll.roll}">${showRoll.roll}</span>` : '');
+    const isYou = who.name === 'You' || (m === 'guest' && S.meta.mine.includes(d.who));
+    const status = d.kind === 'turn' ? (g.final ? `Last flight: ${esc(who.name)} must reel in` : isYou ? 'Your turn' : `${esc(who.name)}'s turn`)
+      : d.kind === 'give' ? `${esc(who.name)} ${isYou ? 'give' : 'gives'} a kite away` : `${esc(who.name)} may grab a kite from ${esc(g.players[d.from].name)}`;
+    let acts = '';
+    if (mineNow) acts = actions(g, d);
+    else if (who.kind === 'robot') acts = `<p class="muted">${esc(who.name)} is thinking…</p>`;
+    else acts = `<p class="muted">Waiting for ${esc(who.name)}${m === 'host' && conns[d.who] && conns[d.who].status !== 'on' ? ', whose phone is not connected. Open the menu and tap Reconnect players.' : '…'}</p>`;
+    const check = m === 'mirror' ? `<p class="small muted">Check code <span class="checkc">${KF.check(g)}</span>. It should match on every phone.</p>` : '';
+    const offline = m === 'guest' && guest && guest.status === 'closed' ? '<p class="warn" role="alert">The connection to the host was lost. Ask the host for a new invite link.</p>' : '';
+    return `${offline}${coach ? `<div class="coach" role="note"><span class="who">Coach</span><p>${esc(coach.text)}</p><button type="button" class="btn btn-small" data-act="coachok">Got it</button></div>` : ''}
+      <section class="stage" aria-label="Current turn"><h2 tabindex="-1" id="turnH">${status}</h2>
+        <div class="news${tangled ? ' tangle' : ''}">${visual}<p>${news.length ? esc(news.map(e => line(e, g)).join(' ')) : 'Nobody has launched a kite yet.'}</p></div>
+        ${acts}${check}</section>
+      <section aria-label="Players"><div class="seats">${g.players.map((p, i) => seatPanel(g, i, d)).join('')}</div></section>
+      ${prev.length ? `<section aria-label="Earlier moves"><h3>Earlier</h3><ul class="feed">${prev.map(e => `<li>${esc(line(e, g))}</li>`).join('')}</ul></section>` : ''}`;
+  }
+  function seatPanel(g, i, d) {
+    const p = g.players[i], on = d && d.who === i, m = mode();
+    const tags = [];
+    if (on) tags.push('<span class="tagx turn">Now</span>');
+    if (p.kind === 'robot') tags.push(`<span class="tagx">Robot, ${LEVEL[p.level].toLowerCase()}</span>`);
+    if (m === 'guest' && S.meta.mine.includes(i)) tags.push('<span class="tagx">You</span>');
+    if (m === 'host' && S.meta.where[i] === 'remote') tags.push(conns[i] && conns[i].status === 'on' ? '<span class="tagx">Other phone</span>' : '<span class="tagx off">Not connected</span>');
+    if (g.final && g.done.includes(i)) tags.push('<span class="tagx">Done</span>');
+    const nums = [...KF.upNumbers(p)].sort();
+    return `<div class="pl${on ? ' on' : ''}"><div class="hd"><span class="nm">${esc(p.name)}${tags.join('')}</span><span class="sc">${plural(KF.score(p), 'point')} reeled in</span></div>
+      <div class="cards" aria-label="${esc(p.name)}'s kites in the air">${p.up.length ? p.up.map(id => kc(id)).join('') : '<span class="none">No kites in the air</span>'}</div>
+      ${p.up.length ? `<p class="small muted">In the air: ${plural(KF.upValue(p), 'point')}. ${nums.length ? `A roll of ${orList(nums.map(String))} tangles.` : 'No roll can tangle these.'}</p>` : ''}</div>`;
+  }
+  function actions(g, d) {
+    const h = hintOn && hintOn.no === g.moveNo ? hintOn : null;
+    const sug = a => h && JSON.stringify(h.act) === JSON.stringify(a) ? ' suggest' : '';
+    const tools = `<div class="row">${undo.length && ['pass', 'mirror', 'practice'].includes(mode()) ? '<button type="button" class="linkbtn" data-act="undo">Undo</button>' : ''}<button type="button" class="linkbtn" data-act="hint">Hint</button></div>${h ? `<p class="hint" role="note">${esc(h.text)}</p>` : ''}`;
+    const me = g.players[d.who];
+    if (d.kind === 'turn') {
+      const nums = [...KF.upNumbers(me)].sort();
+      return `<div class="stack">${d.options.includes('draw') ? `<button type="button" class="btn btn-primary btn-big${sug({ t: 'draw' })}" data-act="move" data-v="draw">Launch a kite<span class="sub">Draw from the deck (${g.deck.length} left)</span></button>` : ''}
+        ${d.options.includes('bank') ? `<button type="button" class="btn btn-good btn-big${sug({ t: 'bank' })}" data-act="move" data-v="bank">Reel in<span class="sub">Roll the die to bank ${plural(KF.upValue(me), 'point')}. ${nums.length ? `Tangles on ${orList(nums.map(String))}.` : 'Safe on any roll.'}</span></button>` : ''}
+        ${tools}</div>`;
+    }
+    if (d.kind === 'give') return `<p><b>Give the ${label(d.card)} to:</b></p><div class="choose">${d.options.map(j => `<button type="button" class="btn${sug({ t: 'give', to: j })}" data-act="give" data-i="${j}">${esc(g.players[j].name)}</button>`).join('')}</div>${tools}`;
+    if (d.kind === 'take') return `<p><b>${me.name === 'You' ? 'Grab' : esc(me.name) + ', grab'} one of ${esc(g.players[d.from].name)}'s kites?</b></p>
+      <div class="choose">${d.options.map(id => `<button type="button" class="btn${sug({ t: 'take', card: id })}" data-act="take" data-i="${id}" aria-label="Take the ${label(id)}"><span class="row" style="align-items:center;flex-wrap:nowrap;justify-content:center">${kc(id)}<span>${label(id)}</span></span></button>`).join('')}</div>
+      <button type="button" class="btn${sug({ t: 'take', card: null })}" data-act="take" data-i="none">Take nothing</button>${tools}`;
+    return '';
+  }
+  function overScreen(g) {
+    const rows = KF.standings(g), wins = rows.filter(r => r.win).map(r => r.name), coach = coachPick(g);
+    const canAgain = mode() !== 'guest';
+    return `${coach ? `<div class="coach" role="note"><span class="who">Coach</span><p>${esc(coach.text)}</p><button type="button" class="btn btn-small" data-act="coachok">Got it</button></div>` : ''}
+      <div class="banner"><p>Game over</p><h2 class="big" tabindex="-1">${wins.length > 1 ? `Shared win: ${esc(andList(wins))}!` : `${esc(wins[0])} wins!`}</h2></div>
+      <ol class="reslist">${rows.map(r => `<li><span>${esc(r.name)}</span><span>${plural(r.score, 'point')} (${plural(r.cards, 'kite')})</span></li>`).join('')}</ol>
+      ${canAgain && mode() !== 'practice' ? '<button type="button" class="btn btn-primary btn-big" data-act="again">Play again, same seats</button>' : ''}
+      <button type="button" class="btn" data-act="leave">Home</button>`;
+  }
+
+  /* ---------- page drawing ---------- */
+  let lastKey = '', botTimer = null;
+  function render() {
+    const scr = S.screen;
+    const key = scr + (scr === 'game' && S.game ? ':' + S.game.phase : '');
+    const ae = document.activeElement, keep = ae && view.contains(ae) && ae.id ? ae.id : null;
+    let html = '';
+    if (scr === 'setup') html = setupScreen();
+    else if (scr === 'mirrorcode') html = mirrorCodeScreen();
+    else if (scr === 'join') html = joinScreen();
+    else if (scr === 'lobby') html = lobbyScreen();
+    else if (scr === 'guestjoin') html = guestJoinScreen();
+    else if (scr === 'guestwait') html = guestWaitScreen();
+    else if (scr === 'game' && S.game) { html = gameScreen(); }
+    else { S.screen = 'home'; html = home(); }
+    view.innerHTML = html;
+    if (key !== lastKey) { window.scrollTo(0, 0); const h = view.querySelector('h1,h2'); if (h && lastKey) h.focus({ preventScroll: true }); }
+    else if (keep) { const el = document.getElementById(keep); if (el) el.focus({ preventScroll: true }); }
+    lastKey = key;
+    if (scr === 'game' && S.game) { announce(S.game); scheduleBot(); }
+  }
+  function scheduleBot() {
+    clearTimeout(botTimer);
+    const g = S.game; if (!g || g.phase === 'over' || !runsRobots() || S.screen !== 'game') return;
+    const d = KF.decision(g); if (g.players[d.who].kind !== 'robot') return;
+    const wait = ({ fast: 0.45, test: 0.02 }[S.prefs.pace] || 1) * (d.kind === 'turn' ? 1500 : 1000);
+    botTimer = setTimeout(() => {
+      if (S.game !== g) return; const d2 = KF.decision(g);
+      if (d2 && g.players[d2.who].kind === 'robot') doAct(KAI.decide(g), true);
+    }, wait);
+  }
+  function doAct(a, auto) {
+    const g = S.game; if (!g) return;
+    if (mode() === 'guest') { if (guest && guest.api && guest.api.link) guest.api.link.send({ t: 'act', a, no: g.moveNo }); return; }
+    if (!auto && ['pass', 'mirror', 'practice'].includes(mode())) snap();
+    try { KF.apply(g, a); } catch (e) { if (!auto) undo.pop(); return; }
+    hintOn = null; save(); broadcast(); render();
+  }
+
+  /* ---------- dialogs ---------- */
+  function openDlg(html) {
+    dlgBody.innerHTML = html;
+    if (!dlg.open) { try { dlg.showModal(); } catch (e) { dlg.setAttribute('open', ''); } }
+    const h = dlgBody.querySelector('h2'); if (h) { h.tabIndex = -1; h.focus(); }
+  }
+  function closeDlg() { try { dlg.close(); } catch (e) { dlg.removeAttribute('open'); } }
+  const RULES = `<h2>How to play Kite Five</h2>
+    <p>Score the most points by reeling in kites. Each card is a kite with a number from 0 to 6. There are five colors, each with its own shape (red diamond, orange triangle, yellow circle, green square, blue hexagon), plus rainbow kites with a star.</p>
+    <h3>On your turn, do one thing</h3><ul>
+      <li><b>Launch a kite.</b> Draw a card. If you have no kite of that color flying, keep it in the air. If you already fly that color, give it to any player who doesn't. If every player already flies that color, you are tangled.</li>
+      <li><b>Reel in.</b> Roll the die. If the roll matches the number on any kite you have flying, you are tangled. Otherwise every flying kite moves to your reeled-in pile, safe for the rest of the game.</li></ul>
+    <h3>Rainbow kites</h3><p>They have no color, so you always keep them, even with another rainbow flying.</p>
+    <h3>Tangled</h3><p>Going around the table from the tangled player, each other player may grab one of their flying kites, but not a color they already fly. Whatever is left blows away.</p>
+    <h3>Kite Five</h3><p>If you ever fly all five colors at once, all of your flying kites reel in at once, with no roll, even on someone else's turn.</p>
+    <h3>Last flight</h3><p>When the last card is drawn, everyone gets one final turn, and it must be a reel-in. Once you have had your last turn, you can't grab kites from anyone else.</p>
+    <h3>Winning</h3><p>Add up the numbers on your reeled-in kites. Highest total wins. A tie goes to whoever reeled in more kites. Still tied? You share the win.</p>
+    <h3>Deck size</h3><p>Fewer players use a smaller deck: the app sets aside 52 cards for 2 players, 39 for 3, 26 for 4, 13 for 5, and none for 6, at random.</p>
+    <h3>Playing on several phones</h3><ul><li><b>Mirror phones:</b> every phone uses the same game code, so the deck and dice match. Say your move out loud and everyone taps it. The check code confirms the phones agree.</li>
+      <li><b>Live link:</b> the host invites each person with a link, they send back a reply code, and moves appear on every phone by themselves.</li></ul>
+    <button type="button" class="btn btn-primary" data-act="close">Got it</button>`;
+  function menu() {
+    const m = mode(), inGame = S.screen === 'game' && S.game;
+    openDlg(`<h2>Menu</h2>
+      <button type="button" class="btn" data-act="rules">How to play</button>
+      ${m === 'host' && inGame ? '<button type="button" class="btn" data-act="reconnect">Reconnect players</button>' : ''}
+      ${m === 'mirror' && S.meta && S.meta.code ? `<p>Game code <b class="checkc">${esc(S.meta.code)}</b></p>` : ''}
+      <label class="check"><input type="checkbox" data-pref="sound"${S.prefs.sound ? ' checked' : ''}> Sounds</label>
+      <label class="check"><input type="checkbox" data-pref="pace"${S.prefs.pace === 'fast' ? ' checked' : ''}> Fast robots</label>
+      ${inGame ? '<button type="button" class="btn" data-act="quit">Leave this game</button>' : ''}
+      <button type="button" class="btn btn-primary" data-act="close">Close</button>
+      <p class="small muted center">Build b52e0ce4</p>`);
+  }
+  function reconnectDlg() {
+    openDlg(`<h2>Reconnect players</h2><p class="small muted">Make a fresh invite for anyone whose phone dropped off, or play their turns here.</p>
+      ${S.meta.where.map((k, i) => k === 'remote' ? inviteBlock(i) : '').join('') || '<p>No one is on another phone.</p>'}
+      <button type="button" class="btn btn-primary" data-act="close">Done</button>`);
+  }
+
+  /* ---------- starting games ---------- */
+  function newSeed() { try { return crypto.getRandomValues(new Uint32Array(1))[0]; } catch (e) { return Math.floor(Math.random() * 4294967296); } }
+  function mkCode(seed, kinds) {
+    let x = 1n; x = (x << 3n) | BigInt(kinds.length - 2);
+    for (let i = 0; i < 6; i++) x = (x << 2n) | BigInt(kinds[i] || 0);
+    x = (x << 32n) | BigInt(seed >>> 0);
+    const ch = []; for (let i = 0; i < 10; i++) { ch.unshift(KF.B32[Number(x & 31n)]); x >>= 5n; }
+    const sum = ch.reduce((s, c, i) => s + KF.B32.indexOf(c) * (i + 3), 0) % 32;
+    const s = ch.join('') + KF.B32[sum]; return `${s.slice(0, 4)}-${s.slice(4, 8)}-${s.slice(8)}`;
+  }
+  function readCode(raw) {
+    const s = String(raw).toUpperCase().replace(/O/g, '0').replace(/[IL]/g, '1').replace(/U/g, 'V').replace(/[^0-9A-Z]/g, '');
+    if (s.length !== 11 || [...s].some(c => KF.B32.indexOf(c) < 0)) return { ok: false, raw, err: 'A game code has 11 letters and numbers, like 1A2B-3C4D-5E6.' };
+    const sum = [...s.slice(0, 10)].reduce((t, c, i) => t + KF.B32.indexOf(c) * (i + 3), 0) % 32;
+    if (KF.B32[sum] !== s[10]) return { ok: false, raw, err: 'That code has a typo somewhere. Check it with the host.' };
+    let x = 0n; for (const c of s.slice(0, 10)) x = (x << 5n) | BigInt(KF.B32.indexOf(c));
+    const seed = Number(x & 0xFFFFFFFFn); x >>= 32n;
+    const k6 = []; for (let i = 5; i >= 0; i--) { k6[i] = Number(x & 3n); x >>= 2n; }
+    const n = Number(x & 7n) + 2; x >>= 3n;
+    if (x !== 1n || n > 6) return { ok: false, raw, err: 'That code is from a different version of the game.' };
+    return { ok: true, raw, seed, kinds: k6.slice(0, n), names: [] };
+  }
+  function seatsFor(names, kinds) { return kinds.map((k, i) => k ? { name: ROBOTS[i], kind: 'robot', level: k } : { name: names[i], kind: 'human' }); }
+  function startFromSetup() {
+    const st = S.setup, names = seatNames(st.seats);
+    undo = []; hintOn = null; lastSaid = -1;
+    if (st.mode === 'live') {
+      S.game = null;
+      S.meta = { mode: 'host', where: st.seats.map(s => s.kind), names: st.seats.map((s, i) => s.kind === 'remote' ? '' : names[i]), levels: st.seats.map(s => s.level || 2), gid: newSeed().toString(36), seed: newSeed() };
+      S.screen = 'lobby'; save(); render(); return;
+    }
+    const seed = newSeed(), kinds = st.seats.map(s => s.kind === 'robot' ? (s.level || 2) : 0);
+    S.game = KF.newGame(seatsFor(names, kinds), seed);
+    S.meta = { mode: st.mode, code: st.mode === 'mirror' ? mkCode(seed, kinds) : null, kinds, names };
+    S.screen = st.mode === 'mirror' ? 'mirrorcode' : 'game';
+    save(); render();
+  }
+  function hostStart() {
+    const M = S.meta, seats = M.where.map((k, i) => k === 'robot' ? { name: ROBOTS[i], kind: 'robot', level: M.levels[i] } : { name: M.names[i] || `Player ${i + 1}`, kind: 'human' });
+    S.game = KF.newGame(seats, M.seed); lastSaid = -1; S.screen = 'game'; save(); broadcast(); render();
+  }
+  function startPractice() {
+    undo = []; hintOn = null; lastSaid = -1;
+    S.game = KF.newGame([{ name: 'You', kind: 'human' }, { name: 'Breezy', kind: 'robot', level: 2 }, { name: 'Gusty', kind: 'robot', level: 2 }], PRACTICE.seed, PRACTICE.preset(cardId));
+    S.meta = { mode: 'practice', coach: {} }; S.screen = 'game'; save(); render();
+  }
+  function leaveGame() {
+    clearTimeout(botTimer);
+    Object.keys(conns).forEach(k => { const c = conns[k]; try { c.inv && c.inv.pc.close(); } catch (e) { /* ignore */ } delete conns[k]; });
+    if (guest && guest.api) { try { guest.api.pc.close(); } catch (e) { /* ignore */ } }
+    guest = null; S.game = null; S.meta = null; undo = []; S.screen = 'home'; save(); render();
+  }
+
+  async function copyText(t) {
+    try { await navigator.clipboard.writeText(t); say('Copied.'); return true; } catch (e) {
+      const ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select();
+      let ok = false; try { ok = document.execCommand('copy'); } catch (err) { ok = false; } ta.remove(); say(ok ? 'Copied.' : 'Copy did not work. Press and hold to copy instead.'); return ok;
+    }
+  }
+  async function shareText(title, text, url) {
+    if (navigator.share) { try { await navigator.share(url ? { title, text, url } : { title, text }); return; } catch (e) { if (e && e.name === 'AbortError') return; } }
+    copyText(url ? `${text} ${url}` : text);
+  }
+
+  /* ---------- taps ---------- */
+  async function act(a, el) {
+    const d = el.dataset, g = S.game;
+    switch (a) {
+      case 'menu': menu(); return;
+      case 'rules': openDlg(RULES); return;
+      case 'close': closeDlg(); render(); return;
+      case 'reconnect': reconnectDlg(); return;
+      case 'quit': openDlg(`<h2>Leave this game?</h2><p>${mode() === 'host' ? 'The game ends for everyone connected.' : 'You can start a new one any time.'}</p>
+          <button type="button" class="btn btn-primary" data-act="quityes">Yes, leave</button><button type="button" class="btn" data-act="close">Keep playing</button>`); return;
+      case 'quityes': closeDlg(); leaveGame(); return;
+      case 'leave': leaveGame(); return;
+      case 'go': joinErr = ''; S.screen = d.v; if (d.v === 'join') parsed = null; break;
+      case 'resume': S.screen = 'game'; break;
+      case 'practice': startPractice(); return;
+      case 'setmode': S.setup.mode = d.v; if (d.v !== 'live') S.setup.seats.forEach(s => { if (s.kind === 'remote') s.kind = 'here'; }); break;
+      case 'addseat': if (S.setup.seats.length < 6) S.setup.seats.push({ name: '', kind: S.setup.mode === 'live' ? 'remote' : 'here', level: 2 }); break;
+      case 'delseat': if (S.setup.seats.length > 2) S.setup.seats.splice(Number(d.i), 1); break;
+      case 'start': startFromSetup(); return;
+      case 'jointab': joinTab = d.v; joinErr = ''; break;
+      case 'readcode': { const v = ($('#jcode') || {}).value || ''; parsed = readCode(v); joinErr = parsed.ok ? '' : parsed.err; break; }
+      case 'joinmirror': {
+        if (!parsed || !parsed.ok) return;
+        const names = parsed.kinds.map((k, i) => k ? ROBOTS[i] : ((parsed.names[i] || '').trim() || `Player ${i + 1}`));
+        undo = []; lastSaid = -1; hintOn = null;
+        S.game = KF.newGame(seatsFor(names, parsed.kinds), parsed.seed);
+        S.meta = { mode: 'mirror', code: mkCode(parsed.seed, parsed.kinds), kinds: parsed.kinds, names }; S.screen = 'game'; save(); break;
+      }
+      case 'readinvite': { const v = ($('#jlink') || {}).value || ''; startGuest(v); return; }
+      case 'gmake': {
+        guest.name = (($('#gname') || {}).value || '').trim();
+        if (!guest.name) { guest.err = 'Type your name first.'; break; }
+        guest.busy = true; guest.err = ''; render();
+        try { guest.api = await NET.answer(guest.invite, guestMsg, guestState); } catch (e) { guest.err = 'This invite didn\'t work. Ask the host for a fresh invite link.'; }
+        guest.busy = false; break;
+      }
+      case 'gcopy': copyText(guest.api.code); return;
+      case 'gshare': shareText('Kite Five reply', guest.api.code); return;
+      case 'invite': makeInvite(Number(d.i)).then(() => { if (dlg.open) reconnectDlg(); }); if (dlg.open) reconnectDlg(); return;
+      case 'copyinv': copyText(conns[Number(d.i)].url); return;
+      case 'share': shareText('Kite Five', 'Join my Kite Five game. Tap this link, then send me back the reply code:', conns[Number(d.i)].url); return;
+      case 'accept': {
+        const i = Number(d.i), t = (document.getElementById('rep' + i) || {}).value || '';
+        await acceptReply(i, t); if (dlg.open) reconnectDlg(); return;
+      }
+      case 'takeover': { const i = Number(d.i); S.meta.where[i] = 'here'; if (!S.meta.names[i]) S.meta.names[i] = `Player ${i + 1}`; save(); if (dlg.open) closeDlg(); break; }
+      case 'hoststart': hostStart(); return;
+      case 'again': {
+        undo = []; hintOn = null; lastSaid = -1;
+        const seats = g.players.map(p => ({ name: p.name, kind: p.kind, level: p.level })), seed = newSeed();
+        S.game = KF.newGame(seats, seed);
+        if (mode() === 'mirror') { S.meta.code = mkCode(seed, S.meta.kinds); S.screen = 'mirrorcode'; }
+        save(); broadcast(); break;
+      }
+      case 'coachok': if (S.meta) { S.meta.coach = S.meta.coach || {}; const c = coachPick(g); if (c) S.meta.coach[c.key] = true; save(); } break;
+      case 'hint': { const h = KAI.hint(g); if (h) hintOn = Object.assign({ no: g.moveNo }, h); if (h) say(h.text); break; }
+      case 'undo': if (undo.length) { const u = JSON.parse(undo.pop()); S.game = u.g; S.meta = u.m; hintOn = null; lastSaid = S.game.moveNo; say('Undone.'); save(); } break;
+      case 'move': doAct({ t: d.v }); return;
+      case 'give': doAct({ t: 'give', to: Number(d.i) }); return;
+      case 'take': doAct({ t: 'take', card: d.i === 'none' ? null : Number(d.i) }); return;
+      default: return;
+    }
+    save(); render();
+  }
+  function startGuest(code) {
+    if (!NET.supported()) { joinErr = 'This browser cannot join live games. Try Safari or Chrome.'; S.screen = 'join'; joinTab = 'live'; render(); return; }
+    if (!/[A-Za-z0-9_-]{40,}/.test(String(code))) { joinErr = 'That doesn\'t look like a whole invite. Ask the host to send it again.'; S.screen = 'join'; joinTab = 'live'; render(); return; }
+    if (S.game && mode() !== 'guest') { /* keep their saved game; joining as guest doesn't overwrite it */ }
+    guest = { invite: code, name: S.setup.myName || '', status: 'new' };
+    S.screen = 'guestjoin'; render();
+  }
+
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-act]');
+    if (!b || b.disabled) return;
+    audio(); act(b.dataset.act, b);
+  });
+  document.addEventListener('input', e => {
+    const t = e.target, f = t.dataset && t.dataset.field, i = Number(t.dataset.i);
+    if (f === 'name') { S.setup.seats[i].name = t.value; save(); }
+    else if (f === 'jname' && parsed) parsed.names[i] = t.value;
+    else if (f === 'gname') { if (guest) guest.name = t.value; S.setup.myName = t.value; save(); }
+  });
+  document.addEventListener('change', e => {
+    const t = e.target, f = t.dataset && t.dataset.field, i = Number(t.dataset.i);
+    if (f === 'kind') { S.setup.seats[i].kind = t.value; save(); render(); }
+    else if (f === 'level') { S.setup.seats[i].level = Number(t.value); save(); }
+    else if (t.dataset && t.dataset.pref === 'sound') { S.prefs.sound = t.checked; save(); if (t.checked) sfx.keep(); }
+    else if (t.dataset && t.dataset.pref === 'pace') { S.prefs.pace = t.checked ? 'fast' : 'normal'; save(); }
+  });
+  dlg.addEventListener('click', e => { if (e.target === dlg) closeDlg(); });
+  $('#menuBtn').dataset.act = 'menu';
+
+  // opened from an invite link?
+  const hm = location.hash.match(/join=([A-Za-z0-9_-]+)/);
+  if (hm) { try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* ignore */ } startGuest(hm[1]); }
+  else {
+    if (S.game && S.screen === 'game') lastSaid = S.game.moveNo;
+    if (S.screen === 'lobby' && !(S.meta && S.meta.mode === 'host')) S.screen = 'home';
+    render();
+  }
+  window.KiteFive = { S: () => S, render, act: (a, extra) => act(a, { dataset: extra || {} }), conns, guest: () => guest, readCode, mkCode };
+})();
+
+if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+</script>
+</body>
+</html>
